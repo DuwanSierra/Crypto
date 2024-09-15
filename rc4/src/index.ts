@@ -77,7 +77,7 @@ class RC4Class {
     let outputText = '';
     const byteStream = byteStreamGenerator(new Uint8Array(this.privateKey)); // copia de la clave privada
     const binaryMessage = [];
-    const binaryKeyStream = [];
+    const binaryKeyStream: string[] = [];
     const binaryXOR = [];
 
     for (let i = 0; i < input.length; i++) {
@@ -95,9 +95,14 @@ class RC4Class {
       outputText += DICTIONARY[encryptedChar];
     }
 
+    const countZeros = binaryKeyStream.join('').split('0').length - 1;
+    const countOnes = binaryKeyStream.join('').split('1').length - 1;
+
     // Registro en el informe
     console.log("Mensaje en binario (5 bits por carácter):", binaryMessage.join(' '));
     console.log("KeyStream en binario (5 bits por carácter):", binaryKeyStream.join(' '));
+    console.log("Número de ceros en el KeyStream:", countZeros);
+    console.log("Número de unos en el KeyStream:", countOnes);
     console.log("XOR en binario (mensaje ^ KeyStream):", binaryXOR.join(' '));
     console.log("Mensaje cifrado en el diccionario:", outputText);
 
@@ -125,9 +130,17 @@ const key = "CLAVE123";
 const message = "MENSAJEDEPRUEBARC4PARACRIPTOLOGIA";
 const rc4 = new RC4Class(key);
 
-console.log("Mensaje original", message);
 const encrypted = rc4.encrypt(message);
-console.log("Texto cifrado:", encrypted);
 
 const decrypted = rc4.decrypt(encrypted);
-console.log("Texto descifrado:", decrypted);
+
+const key2 = "PEDRO";
+const rc42 = new RC4Class(key2);
+
+const encrypted2 = rc42.encrypt(message);
+
+const decrypted2 = rc42.decrypt(encrypted2);
+const decrypted3 = rc4.decrypt(encrypted2);
+console.log("Texto descifrado clave propia:", decrypted2);
+console.log("Texto descifrado clave original:", decrypted);
+console.log("Texto descifrado clave original pero cambiando el decrypted al 2:", decrypted3);
