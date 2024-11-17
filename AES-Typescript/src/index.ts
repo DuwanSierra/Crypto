@@ -32,7 +32,7 @@ Resources:
 const BLOCK_SIZE = 16;
 const BLOCK_SIZE32 = 4;
 const EMPTY_BLOCK = new Uint8Array(BLOCK_SIZE);
-const POLY = 0x1b9; // 1 + x + x**3 + x**4 + x**8
+const POLY = 0x11b; // 1 + x + x**3 + x**4 + x**8
 
 // TODO: remove multiplication, binary ops only
 function mul2(n: number) {
@@ -420,7 +420,7 @@ function validatePCKS(data: Uint8Array, pcks5: boolean) {
     if (!len) throw new Error("aes/pcks5: empty ciphertext not allowed");
     const lastByte = data[len - 1];
     if (lastByte <= 0 || lastByte > 16)
-        throw new Error("aes/pcks5: wrong padding byte:");
+        throw new Error("aes/pcks5: wrong padding");
     const out = data.subarray(0, -lastByte);
     for (let i = 0; i < lastByte; i++)
         if (data[len - i - 1] !== lastByte)
