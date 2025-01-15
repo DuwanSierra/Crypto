@@ -1,5 +1,4 @@
-
-def matrizx2(a, b, polinomio=0x17b):
+def matrizx2(a, b, polinomio=0x17B):
     result = 0
     for i in range(8): #itera 8 veces porque el GF opera en 8 bits
         if (b & 1) == 1: #Si el bit menos significativo de b es 1
@@ -13,14 +12,14 @@ def matrizx2(a, b, polinomio=0x17b):
     return result;
 
 #Genera las constantes de rondo (RCON) utilizadas en la expansion de claves
-def calcular_rcon(polinomio=0x17b):
+def calcular_rcon(polinomio=0x17B):
     rcon = [0] * 256
     rcon[1] = 0x01
     for i in range(2, 256):
         rcon[i] = matrizx2(rcon[i-1], 0x02, polinomio) # calcula cada constante de ronda 
     return [f"0x{x:02X}" for x in rcon]
 
-def gmul(a, b, poly=0x17b):
+def gmul(a, b, poly=0x17B):  # Usando el polinomio 0x17B
     p = 0
     for _ in range(8):
         if b & 1:
@@ -29,19 +28,19 @@ def gmul(a, b, poly=0x17b):
         a <<= 1
         if carry:
             a ^= poly
-            b >>= 1
+        b >>= 1
     return p & 0xFF
 
-#Calculo del inverso multiplicativo.
+
 def inv(x):
     for i in range(256):
         if gmul(x, i) == 1:
             return i
     return 0
 
-#Realiza la transformación afín (un paso del cálculo de la s-box de AES)
+
 def affine_transform(x):
- # Define matriz de transformación
+    # Affine transformation matrix
     matrix = [
         [1, 0, 0, 0, 1, 1, 1, 1],
         [1, 1, 0, 0, 0, 1, 1, 1],
@@ -52,9 +51,8 @@ def affine_transform(x):
         [0, 0, 1, 1, 1, 1, 1, 0],
         [0, 0, 0, 1, 1, 1, 1, 1]
     ]
-    c = 0x63 # Constante de transformación
+    c = 0x63  # Constant for the affine transformation
     result = 0
-    #Realiza la transformación bit a bit usando la matriz de transformación y XOR con la constante C
     for i in range(8):
         bit = 0
         for j in range(8):
@@ -62,7 +60,6 @@ def affine_transform(x):
         result |= (bit << i)
     return result ^ c
 
-#Genera la tabla S-box calculando el inverso multiplicativo y aplicando la transformación afín.
 def generate_sbox():
     sbox = []
     for i in range(256):
@@ -70,7 +67,6 @@ def generate_sbox():
         sbox.append(affine_transform(inv_i))
     return sbox
 
-#Genera la s-box inversa
 def generate_inv_sbox(sbox):
     inv_sbox = [0] * 256
     for i in range(256):
@@ -78,25 +74,25 @@ def generate_inv_sbox(sbox):
     return inv_sbox
 
 
-mul2_new = [matrizx2(i,2, 0x17b) for i in range(256)]
+mul2_new = [matrizx2(i,2, 0x17B) for i in range(256)]
 mul2_hex = [f"0x{x:02X}" for x in mul2_new]
 
-mul3_new = [matrizx2(i, 3, 0x17b) for i in range(256)]
+mul3_new = [matrizx2(i, 3, 0x17B) for i in range(256)]
 mul3_hex = [f"0x{x:02X}" for x in mul3_new]
 
-mul9_new = [matrizx2(i, 9, 0x17b) for i in range(256)]
+mul9_new = [matrizx2(i, 9, 0x17B) for i in range(256)]
 mul9_hex = [f"0x{x:02X}" for x in mul9_new]
 
-mul11_new = [matrizx2(i, 11, 0x17b) for i in range(256)]
+mul11_new = [matrizx2(i, 11, 0x17B) for i in range(256)]
 mul11_hex = [f"0x{x:02X}" for x in mul11_new]
 
-mul13_new = [matrizx2(i, 13, 0x17b) for i in range(256)]
+mul13_new = [matrizx2(i, 13, 0x17B) for i in range(256)]
 mul13_hex = [f"0x{x:02X}" for x in mul13_new]
 
-mul14_new = [matrizx2(i, 14, 0x17b) for i in range(256)]
+mul14_new = [matrizx2(i, 14, 0x17B) for i in range(256)]
 mul14_hex = [f"0x{x:02X}" for x in mul14_new]
 
-rcon_hex=calcular_rcon(0x17b)
+rcon_hex=calcular_rcon(0xE7)
 
 print("\n mul2_hex")
 print (mul2_hex)
@@ -131,5 +127,6 @@ for i in range(0, 256, 16):
 
 print("RCON")
 print(rcon_hex)
+
 
 
