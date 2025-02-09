@@ -1,3 +1,4 @@
+# Implementa la multiplicación de dos numeros utilizando el polinomio ireductible 
 def matrizx2(a, b, polinomio=0x17B):
     result = 0
     for i in range(8): #itera 8 veces porque el GF opera en 8 bits
@@ -19,6 +20,7 @@ def calcular_rcon(polinomio=0x17B):
         rcon[i] = matrizx2(rcon[i-1], 0x02, polinomio) # calcula cada constante de ronda 
     return [f"0x{x:02X}" for x in rcon]
 
+#Multiplica dos numeros en un campo finito, utilizando el polinomio
 def gmul(a, b, poly=0x17B):  # Usando el polinomio 0x17B
     p = 0
     for _ in range(8):
@@ -31,14 +33,14 @@ def gmul(a, b, poly=0x17B):  # Usando el polinomio 0x17B
         b >>= 1
     return p & 0xFF
 
-
+#Calcula el inverso multiplicativo
 def inv(x):
     for i in range(256):
         if gmul(x, i) == 1:
             return i
     return 0
 
-
+#La transformacion usa una matriz especifica, para alterar los bytes
 def affine_transform(x):
     # Affine transformation matrix
     matrix = [

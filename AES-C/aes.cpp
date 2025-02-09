@@ -30,25 +30,30 @@ string hexToText(const string& hex) {
     return text;
 }
 
+
+// Realiza la operaciòn XOR entre el estado y una clave de ronda
 void AddRoundKey(unsigned char* state, unsigned char* roundKey) {
     for (int i = 0; i < 16; i++) {
         state[i] ^= roundKey[i];
     }
 }
 
+// Aplica la sustitución de bytes utilizando la caja S de AES
 void SubBytes(unsigned char* state) {
     for (int i = 0; i < 16; i++) {
         state[i] = s[state[i]];
     }
 }
 
+
+// Realiza la operación de desplamiento de filas
 void ShiftRows(unsigned char* state) {
     unsigned char tmp[16];
 
-    tmp[0] = state[0];
-    tmp[1] = state[5];
-    tmp[2] = state[10];
-    tmp[3] = state[15];
+    tmp[0] = state[0]; // No se mueve
+    tmp[1] = state[5]; // Se desplaza a la izquierda
+    tmp[2] = state[10]; // se deplaza dos posiciones a la izquierda
+    tmp[3] = state[15]; //se desplaza tres posiciones a la izquierda 
 
     tmp[4] = state[4];
     tmp[5] = state[9];
@@ -65,38 +70,50 @@ void ShiftRows(unsigned char* state) {
     tmp[14] = state[6];
     tmp[15] = state[11];
 
+// copiar el resultado de vuelta al estado
     for (int i = 0; i < 16; i++) {
         state[i] = tmp[i];
     }
 }
 
+//Aplica una mezcla de columnas que combina los bytes de cada columna con ciertas constantes
 void MixColumns(unsigned char* state) {
     unsigned char tmp[16];
 
+    // Mezcla de la primera comunla bytes 0,1,2,3
     tmp[0] = (unsigned char)mul2[state[0]] ^ mul3[state[1]] ^ state[2] ^ state[3];
     tmp[1] = (unsigned char)state[0] ^ mul2[state[1]] ^ mul3[state[2]] ^ state[3];
     tmp[2] = (unsigned char)state[0] ^ state[1] ^ mul2[state[2]] ^ mul3[state[3]];
     tmp[3] = (unsigned char)mul3[state[0]] ^ state[1] ^ state[2] ^ mul2[state[3]];
 
+// Mezcla de la segunda columna bytes 4,5,6,7
     tmp[4] = (unsigned char)mul2[state[4]] ^ mul3[state[5]] ^ state[6] ^ state[7];
     tmp[5] = (unsigned char)state[4] ^ mul2[state[5]] ^ mul3[state[6]] ^ state[7];
     tmp[6] = (unsigned char)state[4] ^ state[5] ^ mul2[state[6]] ^ mul3[state[7]];
     tmp[7] = (unsigned char)mul3[state[4]] ^ state[5] ^ state[6] ^ mul2[state[7]];
 
+//Mezcla de la tercera columna 8,9,10,11
     tmp[8] = (unsigned char)mul2[state[8]] ^ mul3[state[9]] ^ state[10] ^ state[11];
     tmp[9] = (unsigned char)state[8] ^ mul2[state[9]] ^ mul3[state[10]] ^ state[11];
     tmp[10] = (unsigned char)state[8] ^ state[9] ^ mul2[state[10]] ^ mul3[state[11]];
     tmp[11] = (unsigned char)mul3[state[8]] ^ state[9] ^ state[10] ^ mul2[state[11]];
 
+// Mezcla de la cuarta columna 12, 13, 14, 15
     tmp[12] = (unsigned char)mul2[state[12]] ^ mul3[state[13]] ^ state[14] ^ state[15];
     tmp[13] = (unsigned char)state[12] ^ mul2[state[13]] ^ mul3[state[14]] ^ state[15];
     tmp[14] = (unsigned char)state[12] ^ state[13] ^ mul2[state[14]] ^ mul3[state[15]];
     tmp[15] = (unsigned char)mul3[state[12]] ^ state[13] ^ state[14] ^ mul2[state[15]];
 
+//Copiar el resultado de vuelta al estado
     for (int i = 0; i < 16; i++) {
         state[i] = tmp[i];
     }
 }
+
+//Genera una ronda
+//Aplicando la sustitucion
+//El desplazamiento de filas 
+// y por ultimo la operación XOR entre el estado y la clave
 
 void Round(unsigned char* state, unsigned char* key) {
     SubBytes(state);
@@ -105,12 +122,22 @@ void Round(unsigned char* state, unsigned char* key) {
     AddRoundKey(state, key);
 }
 
+/*
+La ronda final se realiza sin realizar el mixColumns, es decir,
+sin mezclar las columnas con las constantes
+*/
 void FinalRound(unsigned char* state, unsigned char* key) {
     SubBytes(state);
     ShiftRows(state);
     AddRoundKey(state, key);
 }
 
+/*
+Implemente el codigo de cifrado completo
+La clave se expande a una serie de claves de ronda utilizando la funcion KeyExpansion
+El mensaje se divide en 16Bytes y para cada bloque se aplica el proceso de cifrado llamando al metodo round
+Una vez finalizado en la ultima ronda se llama al metodo FinalRound (Sin mixColumns)
+*/
 void AESEncrypt(unsigned char* message, unsigned char* expandedKey, unsigned char* encryptedMessage) {
     unsigned char state[16];
 
@@ -133,30 +160,40 @@ void AESEncrypt(unsigned char* message, unsigned char* expandedKey, unsigned cha
     }
 }
 
+/*
+Aplica una operación XOR con la clave de la ronda.
+*/
 void SubRoundKey(unsigned char* state, unsigned char* roundKey) {
     for (int i = 0; i < 16; i++) {
         state[i] ^= roundKey[i];
     }
 }
 
+/*
+Utiliza las tablas definidas para multiplicar los bytes por constantes inversamente a como se hizo en el cifrado.
+*/
 void InverseMixColumns(unsigned char* state) {
     unsigned char tmp[16];
 
+// Inversa de la mezcla de la primera columna 0,1,2,3
     tmp[0] = (unsigned char)mul14[state[0]] ^ mul11[state[1]] ^ mul13[state[2]] ^ mul9[state[3]];
     tmp[1] = (unsigned char)mul9[state[0]] ^ mul14[state[1]] ^ mul11[state[2]] ^ mul13[state[3]];
     tmp[2] = (unsigned char)mul13[state[0]] ^ mul9[state[1]] ^ mul14[state[2]] ^ mul11[state[3]];
     tmp[3] = (unsigned char)mul11[state[0]] ^ mul13[state[1]] ^ mul9[state[2]] ^ mul14[state[3]];
 
+//Inversa de la mezcla de la segunda columna bytes 4,5,6,7
     tmp[4] = (unsigned char)mul14[state[4]] ^ mul11[state[5]] ^ mul13[state[6]] ^ mul9[state[7]];
     tmp[5] = (unsigned char)mul9[state[4]] ^ mul14[state[5]] ^ mul11[state[6]] ^ mul13[state[7]];
     tmp[6] = (unsigned char)mul13[state[4]] ^ mul9[state[5]] ^ mul14[state[6]] ^ mul11[state[7]];
     tmp[7] = (unsigned char)mul11[state[4]] ^ mul13[state[5]] ^ mul9[state[6]] ^ mul14[state[7]];
 
+//Inversa de la columna tercera
     tmp[8] = (unsigned char)mul14[state[8]] ^ mul11[state[9]] ^ mul13[state[10]] ^ mul9[state[11]];
     tmp[9] = (unsigned char)mul9[state[8]] ^ mul14[state[9]] ^ mul11[state[10]] ^ mul13[state[11]];
     tmp[10] = (unsigned char)mul13[state[8]] ^ mul9[state[9]] ^ mul14[state[10]] ^ mul11[state[11]];
     tmp[11] = (unsigned char)mul11[state[8]] ^ mul13[state[9]] ^ mul9[state[10]] ^ mul14[state[11]];
 
+//Inversa de la columna cuarta
     tmp[12] = (unsigned char)mul14[state[12]] ^ mul11[state[13]] ^ mul13[state[14]] ^ mul9[state[15]];
     tmp[13] = (unsigned char)mul9[state[12]] ^ mul14[state[13]] ^ mul11[state[14]] ^ mul13[state[15]];
     tmp[14] = (unsigned char)mul13[state[12]] ^ mul9[state[13]] ^ mul14[state[14]] ^ mul11[state[15]];
@@ -167,13 +204,16 @@ void InverseMixColumns(unsigned char* state) {
     }
 }
 
+/*
+Realiza el desplazamiento inverso de filas
+*/
 void ShiftRowsDecrypt(unsigned char* state) {
     unsigned char tmp[16];
 
-    tmp[0] = state[0];
-    tmp[1] = state[13];
-    tmp[2] = state[10];
-    tmp[3] = state[7];
+    tmp[0] = state[0]; // No se mueve
+    tmp[1] = state[13]; //Se desplaza una posición a la derecha
+    tmp[2] = state[10]; // se desplaza dos posiciones a la derecha
+    tmp[3] = state[7]; // se desplaza tres posiciones a la derecha
 
     tmp[4] = state[4];
     tmp[5] = state[1];
@@ -195,12 +235,19 @@ void ShiftRowsDecrypt(unsigned char* state) {
     }
 }
 
+/*
+Aplica la caja s inversa, en lugar de la caja s0
+*/
 void SubBytesDecrypt(unsigned char* state) {
     for (int i = 0; i < 16; i++) {
         state[i] = inv_s[state[i]];
     }
 }
 
+/*
+A diferencia del cifrado se llama de segundas al mix columns
+luego al shiftrows y por ultimo al Subbytes 
+*/
 void RoundDecrypt(unsigned char* state, unsigned char* key) {
     SubRoundKey(state, key);
     InverseMixColumns(state);
@@ -208,12 +255,19 @@ void RoundDecrypt(unsigned char* state, unsigned char* key) {
     SubBytesDecrypt(state);
 }
 
+/*
+La primera ronda no llama a mix columns inversa
+*/
 void InitialRound(unsigned char* state, unsigned char* key) {
     SubRoundKey(state, key);
     ShiftRowsDecrypt(state);
     SubBytesDecrypt(state);
 }
 
+/*
+Realiza todo el proceso de descifrado.
+El mensaje se divide en 16 bytes y se aplica el proceso de descifrado en cada bloque.
+*/
 void AESDecrypt(unsigned char* encryptedMessage, unsigned char* expandedKey, unsigned char* decryptedMessage) {
     unsigned char state[16];
 

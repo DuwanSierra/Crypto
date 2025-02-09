@@ -194,6 +194,12 @@ unsigned char mul14[256] =
 };
 
 // Auxiliary function for KeyExpansion
+/*
+Procesa cada bloque de 4 bytes de la clave
+Hace una rotacion de 4 bytes
+Cada byte en el bloque de 4 bytes es sustituido usando la caja S
+y se realiza una xor con las constantes
+*/
 void KeyExpansionCore(unsigned char * in, unsigned char i) {
 	// Rotate left by one byte: shift left 
 	unsigned char t = in[0];
@@ -213,9 +219,9 @@ void KeyExpansionCore(unsigned char * in, unsigned char i) {
 }
 
 /* The main KeyExpansion function
- * Generates additional keys using the original key
- * Total of 11 128-bit keys generated, including the original
- * Keys are stored one after the other in expandedKeys
+ * Se realiza la copia original de la clave en el arreglo,
+ * Inicia un bucle para generar las claves hasta alcanzar los 178 bits, cada uno de 16 bytes por ronda
+ * 
  */
 void KeyExpansion(unsigned char inputKey[16], unsigned char expandedKeys[176]) {
 	// The first 128 bits are the original key
