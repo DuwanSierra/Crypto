@@ -5,6 +5,9 @@ import rsa
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad, unpad
 import os
+import internal_aes
+import base64
+import internal_aes
 
 '''
 Implementa un sistema de contratos inteligentes usando blockchain
@@ -73,18 +76,47 @@ class SmartContract:
     Concatena IV + datos cifrados para poder descifrarlos despues.
     '''
     def encrypt_transaction(self, data):
+        # Crear el objeto cipher en modo CBC; se genera automáticamente un IV aleatorio.
         cipher = AES.new(self.aes_key, AES.MODE_CBC)
-        encrypted_data = cipher.encrypt(pad(data.encode(), AES.block_size))
-        return cipher.iv + encrypted_data
+        # Aplicar padding al dato (asegurar que sea múltiplo de 16 bytes)
+        padded_data = pad(data.encode(), AES.block_size)
+        # Cifrar los datos
+        encrypted_data = cipher.encrypt(padded_data)
+        # Concatenar el IV y los datos cifrados
+        encrypted_bytes = cipher.iv + encrypted_data
+        # Convertir los bytes a una cadena en base64 para que sea serializable a JSON
+        encrypted_b64 = base64.b64encode(encrypted_bytes).decode('utf-8')
+        return encrypted_b64
+
+    def encrypt_transaction_internal(self, data):
+        encrypted_str = internal_aes.encrypt(self.aes_key.hex(), data)
+        print("Encrypted bytes: ", encrypted_str)
+        # Convertir la cadena cifrada en un string de unos y ceros
+        return encrypted_str
+    
+    def decrypt_transaction_internal(self, encrypted_data):
+        # 3. Llama a la función interna de desencriptación usando la clave y la cadena de bits.
+        print("Decode Encrypted bytes: ", encrypted_data)
+        decrypted_message = internal_aes.decrypt(self.aes_key.hex(), encrypted_data)
+        return decrypted_message
 
     '''
     Descifra datos AES
     Extrae el IV y usa la clave AES para descifrar.
     '''
     def decrypt_transaction(self, encrypted_data):
-        iv = encrypted_data[:AES.block_size] #Extrae IV
-        cipher = AES.new(self.aes_key, AES.MODE_CBC, iv)
-        return unpad(cipher.decrypt(encrypted_data[AES.block_size:]), AES.block_size).decode()
+        # Decodificar los datos cifrados de base64 a bytes
+        encrypted_bytes = base64.b64decode(encrypted_data)
+        # Extraer el IV del inicio de los datos cifrados
+        iv = encrypted_bytes[:AES.block_size]
+        # Crear un objeto cipher en modo CBC con el IV extraído
+        cipher = AES.new(self.aes_key, AES.MODE_CBC, iv=iv)
+        # Descifrar los datos (sin padding)
+        decrypted_data = cipher.decrypt(encrypted_bytes[AES.block_size:])
+        # Eliminar el padding de los datos descifrados
+        data = unpad(decrypted_data, AES.block_size)
+        # Decodificar los datos a una cadena
+        return data.decode('utf-8')
 
 
     '''
@@ -119,13 +151,15 @@ class SmartContract:
     '''
     def add_block(self, observations, verification_list):
         last_block = self.chain[-1]
+        # Cifrar cada observación
+        internal_encrypted_observations = [self.encrypt_transaction_internal(obs) for obs in observations]
         block = {
             "index": len(self.chain),
             "previous_hash": last_block["hash"], #Enlaza con el bloque anterior
             "timestamp": time.time(),
             "hash_code": self.hash_code(str(verification_list)),
             "verification_list": verification_list,
-            "observations": [(obs, self.sign_observation(obs)) for obs in observations],#Firma cada observación
+            "observations": internal_encrypted_observations, #Firma cada observación
         }
         block["nonce"], block["proof_of_work"] = self.mine_nonce(block) #Resuelve PoW
         block["hash"] = self.hash_block(block)#Genera hash del bloque
